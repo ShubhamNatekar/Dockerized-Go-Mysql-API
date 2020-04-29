@@ -1,24 +1,22 @@
-FROM golang:1.11.2 as dev
-
-WORKDIR /go/src/github.com/
-
-# Install Dependecies
-RUN go get -u github.com/gorilla/mux
-RUN go get -u github.com/jinzhu/gorm
-RUN go get -u github.com/go-sql-driver/mysql
-
+# Start from golang base image
+FROM golang:alpine as builder
+RUN apk update && apk add --no-cache git
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download 
 COPY . .
-
-
-#build binary
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 
-FROM alpine:3.9.2 as prod
+# MYSQL image
+FROM mysql:8.0.2
+ENV MYSQL_DATABASE userdb
+EXPOSE 3306
 
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
 WORKDIR /root/
+COPY --from=builder /app/main .
+COPY --from=builder /app/.env .       
+EXPOSE 8080
 
-RUN apk add --update mysql mysql-client && rm -f /var/cache/apk/*
-# copy main binary
-COPY --from=dev /go/src/github.com/main .
-
-ENTRYPOINT ["./main"]
+CMD ["./main"]

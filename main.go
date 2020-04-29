@@ -1,11 +1,7 @@
 package main
-import (
-	"github.com/api/app"
-	"github.com/api/config"
-)
+
+import "github.com/ShubhamNatekar/Go-Mysql-API/api"
+
 func main() {
-	config := config.GetConfig()
-	app := &app.App{}
-	app.Initialize(config)
-	app.Run(":3000")
+	api.Run()
 }
